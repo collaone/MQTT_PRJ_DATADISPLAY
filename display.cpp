@@ -130,7 +130,6 @@ void Display::unsubscribeAll()
 }
 
 
-
 bool Display::isNumber(const std::string& s)
 {
     return !s.empty() && std::find_if(s.begin(),
