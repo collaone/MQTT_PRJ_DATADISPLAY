@@ -27,4 +27,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 HEADERS += \
     display.h \
-    qconsolelistener.h
+    qconsolelistener.h \
+    logger.h

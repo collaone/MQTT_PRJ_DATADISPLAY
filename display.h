@@ -4,6 +4,8 @@
 #include <QMqttClient>
 #include <QTimer>
 
+#include <logger.h>
+
 class Display : public QObject
 {
 public:
@@ -11,18 +13,17 @@ public:
     ~Display();
 
     void init();
-    void waitingChoice();
 
 public slots:
     void onConnect();
-    void onMsg(const QMqttMessage &msg);
     void visualize(QString userChoice);
 
 private:
+    Logger logger;
     QMqttClient *m_client;
-    QMqttSubscription *sub;
     QTimer timer;
 
+    void waitingChoice();
     bool isNumber(const std::string& s);
     void unsubscribeAll();
 

@@ -1,20 +1,11 @@
-#include "display.h"
-
 #include <iostream>
 #include <QtDebug>
 #include <QDateTime>
 #include <QTimer>
 
-#include <iostream>
-#include <memory>
-#include <string>
-#include <future>
-#include <thread>
-#include <mutex>
-#include <condition_variable>
-#include <deque>
+#include "display.h"
+#include "qconsolelistener.h"
 
-#include <qconsolelistener.h>
 
 Display::Display(QObject *parent) : QObject(parent)
 {
@@ -25,11 +16,8 @@ Display::Display(QObject *parent) : QObject(parent)
 
     connect(m_client, &QMqttClient::connected, this, &Display::onConnect);
 
-    connect(m_client, &QMqttClient::messageReceived, this, [](const QByteArray &message, const QMqttTopicName &topic) {
-        qDebug() << qUtf8Printable(message);
-        //std::cout << message.toStdString();
-        //Command visualizer;
-        //visualizer.show(message);
+    connect(m_client, &QMqttClient::messageReceived, this, [this](const QByteArray &message) {
+        logger.print(message.toStdString());
     });
 }
 
@@ -40,7 +28,7 @@ Display::~Display()
 
 void Display::init()
 {
-    qDebug() << "Connecting...";
+    logger.print("Connecting...");
     m_client->connectToHost();
 }
 
@@ -56,69 +44,74 @@ void Display::waitingChoice()
 
 void Display::visualize(QString userChoice)
 {
+    // Set new probing interval
     if (isNumber(userChoice.toStdString()))
     {
         int newSampling = userChoice.toInt();
         if (500 <= newSampling && newSampling <= 5000)
         {
-            qDebug() << "\nSetting the probing interval at: " << userChoice;
+            logger.print("Setting the probing interval at: ", userChoice.toStdString());
             if (m_client->publish(TOPIC_COMMAND, userChoice.toStdString().c_str()) == -1)
-                qDebug() << "Error while publish";
+                logger.print("Error while publish");
         }
         else
         {
             qDebug() << "New sampling";
         }
     }
+    // Show CPU Temperature
     else if (userChoice.compare("T") == 0)
     {
         if (TOPIC_CPU_TEMP.compare(activeSub) != 0) {
             unsubscribeAll();
-            qDebug() << "Start displaying CPU Temperature";
+            logger.print("Start displaying CPU Temperature");
 
             if (!m_client->subscribe(TOPIC_CPU_TEMP, 0))
-                qDebug() << "Error in subscribe";
+                logger.print("Error in subscribe");
             else
                 activeSub = TOPIC_CPU_TEMP;
         }
     }
+    // Show CPU Usage
     else if (userChoice.compare("U") == 0)
     {
         if (TOPIC_CPU_LOAD.compare(activeSub) != 0) {
             unsubscribeAll();
-            qDebug() << "Start displaying CPU Usage";
+            logger.print("Start displaying CPU Usage");
 
             if (!m_client->subscribe(TOPIC_CPU_LOAD, 0))
-                qDebug() << "Error in subscribe";
+                logger.print("Error in subscribe");
             else
                 activeSub = TOPIC_CPU_LOAD;
         }
     }
+    // Show free disk space
     else if (userChoice.compare("F") == 0)
     {
         if (TOPIC_CPU_TEMP.compare(activeSub) != 0) {
             unsubscribeAll();
-            qDebug() << "Start displaying free disk space";
+            logger.print("Start displaying free disk space");
 
             if (!m_client->subscribe(TOPIC_DISK_FREE, 0))
-                qDebug() << "Error in subscribe";
+                logger.print("Error in subscribe");
             else
                 activeSub = TOPIC_DISK_FREE;
         }
     }
+    // Stop displaying
     else if (userChoice.compare("S") == 0) {
-        qDebug() << "Stop displaying";
+        logger.print("Stop displaying");
         unsubscribeAll();
     }
     else
     {
-        qDebug() << "COMMAND NOT VALID: " << userChoice;
+        logger.print("COMMAND NOT VALID: ", userChoice.toStdString());
     }
 }
 
 void Display::onConnect()
 {
-    qDebug() << "Connected.";
+    logger.print("Connected.");
     waitingChoice();
 }
 
