@@ -1,7 +1,7 @@
 # MQTT_PRJ_DATADISPLAY
 
 Console application developed to interact with the [probe](https://github.com/collaone/MQTT_PRJ_PROBE).
-Use the class [QConsoleListener](https://github.com/juangburgos/QConsoleListener)
+Use the class [QConsoleListener](https://github.com/juangburgos/QConsoleListener) for asynchronous input.
 
 ### Note: 
 It works on linus system, with Qt5.12. Mqtt library must be installed.
