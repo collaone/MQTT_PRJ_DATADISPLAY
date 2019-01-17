@@ -1,12 +1,17 @@
 #include <iostream>
-#include <QtDebug>
 #include <QDateTime>
 #include <QTimer>
 
 #include "display.h"
 #include "qconsolelistener.h"
 
-
+/**
+ * @brief Display::Display
+ * @param parent
+ *
+ * Constructor
+ * instantiate QMqttClient
+ */
 Display::Display(QObject *parent) : QObject(parent)
 {
     m_client = new QMqttClient(this);
@@ -16,32 +21,55 @@ Display::Display(QObject *parent) : QObject(parent)
 
     connect(m_client, &QMqttClient::connected, this, &Display::onConnect);
 
+    connect(m_client, &QMqttClient::disconnected, this, &Display::onDisconnect);
+
     connect(m_client, &QMqttClient::messageReceived, this, [this](const QByteArray &message) {
         logger.print(message.toStdString());
     });
 }
 
+/**
+ * @brief Display::~Display
+ *
+ * Destructor
+ * Disconnect QMqttClient
+ */
 Display::~Display()
 {
     m_client->disconnectFromHost();
 }
 
+
+/**
+ * @brief Display::init
+ * Connect to broker
+ */
 void Display::init()
 {
     logger.print("Connecting...");
     m_client->connectToHost();
 }
 
+/**
+ * @brief Display::waitingChoice
+ * display startup screen
+ */
 void Display::waitingChoice()
 {
-    qDebug() << "Type:";
-    qDebug() << "T to start displaying CPU temperature";
-    qDebug() << "U to start displaying CPU usage";
-    qDebug() << "F to start displaying free space of the root partition";
-    qDebug() << "S to stop displaying";
-    qDebug() << "a number from 500 to 5000 to set the probing interval\n";
+    logger.print("Type:");
+    logger.print("T to start displaying CPU temperature");
+    logger.print("U to start displaying CPU usage");
+    logger.print("F to start displaying free space of the root partition");
+    logger.print("S to stop displaying");
+    logger.print("a number from 500 to 5000 to set the probing interval\n");
 }
 
+/**
+ * @brief Display::visualize
+ * @param userChoice
+ * Visualize the chosen property
+ * subscribing to the corresponding topic
+ */
 void Display::visualize(QString userChoice)
 {
     // Set new probing interval
@@ -50,13 +78,14 @@ void Display::visualize(QString userChoice)
         int newSampling = userChoice.toInt();
         if (500 <= newSampling && newSampling <= 5000)
         {
-            logger.print("Setting the probing interval at: ", userChoice.toStdString());
+            QString msg = QString("Setting the probing interval at: ").append(userChoice).append("ms");
+            logger.print(msg.toStdString());
             if (m_client->publish(TOPIC_COMMAND, userChoice.toStdString().c_str()) == -1)
                 logger.print("Error while publish");
         }
         else
         {
-            qDebug() << "New sampling";
+            logger.print("COMMAND NOT VALID: ", userChoice.toStdString());
         }
     }
     // Show CPU Temperature
@@ -109,12 +138,29 @@ void Display::visualize(QString userChoice)
     }
 }
 
+/**
+ * @brief Display::onConnect
+ * Once connected to the broker, display startup screen
+ */
 void Display::onConnect()
 {
     logger.print("Connected.");
     waitingChoice();
 }
 
+/**
+ * @brief Display::onDisconnect
+ * Once disconnected from the broker, destroy
+ */
+void Display::onDisconnect()
+{
+    delete m_client;
+    m_client = nullptr;
+}
+
+/**
+ * @brief Display::unsubscribeAll
+ */
 void Display::unsubscribeAll()
 {
     m_client->unsubscribe(TOPIC_CPU_TEMP);
@@ -122,7 +168,11 @@ void Display::unsubscribeAll()
     m_client->unsubscribe(TOPIC_DISK_FREE);
 }
 
-
+/**
+ * @brief Display::isNumber
+ * @param s
+ * @return true if string s represent a number
+ */
 bool Display::isNumber(const std::string& s)
 {
     return !s.empty() && std::find_if(s.begin(),

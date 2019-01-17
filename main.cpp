@@ -1,4 +1,5 @@
 #include <QCoreApplication>
+
 #include "display.h"
 #include "qconsolelistener.h"
 
@@ -12,7 +13,6 @@ int main(int argc, char *argv[])
     // listen to console input
     QConsoleListener console;
     QObject::connect(&console, &QConsoleListener::newLine, [&display](const QString &strNewLine) {
-        //qDebug() << "Echo :" << strNewLine;
         display.visualize(strNewLine);
     });
 

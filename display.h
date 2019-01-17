@@ -16,6 +16,7 @@ public:
 
 public slots:
     void onConnect();
+    void onDisconnect();
     void visualize(QString userChoice);
 
 private:
