@@ -85,7 +85,8 @@ void Display::visualize(QString userChoice)
         }
         else
         {
-            logger.print("COMMAND NOT VALID: ", userChoice.toStdString());
+            QString msg = QString("COMMAND NOT VALID: ").append(userChoice);
+            logger.print(msg.toStdString());
         }
     }
     // Show CPU Temperature
@@ -134,7 +135,8 @@ void Display::visualize(QString userChoice)
     }
     else
     {
-        logger.print("COMMAND NOT VALID: ", userChoice.toStdString());
+        QString msg = QString("COMMAND NOT VALID: ").append(userChoice);
+        logger.print(msg.toStdString());
     }
 }
 
