@@ -6,6 +6,12 @@ Use the class [QConsoleListener](https://github.com/juangburgos/QConsoleListener
 ### Note: 
 It works on linus system, with Qt5.12. Mqtt library must be installed.
 
+## Build
+```c++
+qmake Probe.pro
+make
+```
+
 ## Usage
 Start the probe application.
 Start the application DataDisplay.
