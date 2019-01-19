@@ -90,7 +90,7 @@ void Display::visualize(QString userChoice)
         }
     }
     // Show CPU Temperature
-    else if (userChoice.compare("T") == 0)
+    else if (userChoice.compare("T") == 0 || userChoice.compare("t") == 0)
     {
         if (TOPIC_CPU_TEMP.compare(activeSub) != 0) {
             unsubscribeAll();
@@ -103,7 +103,7 @@ void Display::visualize(QString userChoice)
         }
     }
     // Show CPU Usage
-    else if (userChoice.compare("U") == 0)
+    else if (userChoice.compare("U") == 0 || userChoice.compare("u") == 0)
     {
         if (TOPIC_CPU_LOAD.compare(activeSub) != 0) {
             unsubscribeAll();
@@ -116,7 +116,7 @@ void Display::visualize(QString userChoice)
         }
     }
     // Show free disk space
-    else if (userChoice.compare("F") == 0)
+    else if (userChoice.compare("F") == 0 || userChoice.compare("f") == 0)
     {
         if (TOPIC_CPU_TEMP.compare(activeSub) != 0) {
             unsubscribeAll();
@@ -129,7 +129,7 @@ void Display::visualize(QString userChoice)
         }
     }
     // Stop displaying
-    else if (userChoice.compare("S") == 0) {
+    else if (userChoice.compare("S") == 0 || userChoice.compare("s") == 0) {
         logger.print("Stop displaying");
         unsubscribeAll();
     }
