@@ -37,6 +37,8 @@ Display::Display(QObject *parent) : QObject(parent)
 Display::~Display()
 {
     m_client->disconnectFromHost();
+    delete m_client;
+    m_client = nullptr;
 }
 
 
@@ -46,6 +48,8 @@ Display::~Display()
  */
 void Display::init()
 {
+    waitingChoice();
+
     logger.print("Connecting...");
     m_client->connectToHost();
 }
@@ -72,71 +76,79 @@ void Display::waitingChoice()
  */
 void Display::visualize(QString userChoice)
 {
-    // Set new probing interval
-    if (isNumber(userChoice.toStdString()))
+    if (m_client->state() != QMqttClient::Connected)
     {
-        int newSampling = userChoice.toInt();
-        if (500 <= newSampling && newSampling <= 5000)
+        logger.print("No connection available.");
+        m_client->connectToHost();
+    }
+    else {
+        // Set new probing interval
+        if (isNumber(userChoice.toStdString()))
         {
-            QString msg = QString("Setting the probing interval at: ").append(userChoice).append("ms");
-            logger.print(msg.toStdString());
-            if (m_client->publish(TOPIC_COMMAND, userChoice.toStdString().c_str()) == -1)
-                logger.print("Error while publish");
+            int newSampling = userChoice.toInt();
+            if (500 <= newSampling && newSampling <= 5000)
+            {
+                QString msg = QString("Setting the probing interval at: ").append(userChoice).append("ms");
+                logger.print(msg.toStdString());
+                if (m_client->publish(TOPIC_COMMAND, userChoice.toStdString().c_str()) == -1)
+                    logger.print("Error while publish");
+            }
+            else
+            {
+                QString msg = QString("COMMAND NOT VALID: ").append(userChoice);
+                logger.print(msg.toStdString());
+            }
+        }
+        // Show CPU Temperature
+        else if (userChoice.compare("T") == 0 || userChoice.compare("t") == 0)
+        {
+            if (TOPIC_CPU_TEMP.compare(activeSub) != 0) {
+                unsubscribeAll();
+                logger.print("Start displaying CPU Temperature");
+
+                if (!m_client->subscribe(TOPIC_CPU_TEMP, 0))
+                    logger.print("Error in subscribe");
+                else
+                    activeSub = TOPIC_CPU_TEMP;
+            }
+        }
+        // Show CPU Usage
+        else if (userChoice.compare("U") == 0 || userChoice.compare("u") == 0)
+        {
+            if (TOPIC_CPU_LOAD.compare(activeSub) != 0) {
+                unsubscribeAll();
+                logger.print("Start displaying CPU Usage");
+
+                if (!m_client->subscribe(TOPIC_CPU_LOAD, 0))
+                    logger.print("Error in subscribe");
+                else
+                    activeSub = TOPIC_CPU_LOAD;
+            }
+        }
+        // Show free disk space
+        else if (userChoice.compare("F") == 0 || userChoice.compare("f") == 0)
+        {
+            if (TOPIC_DISK_FREE.compare(activeSub) != 0) {
+                unsubscribeAll();
+                logger.print("Start displaying free disk space");
+
+                if (!m_client->subscribe(TOPIC_DISK_FREE, 0))
+                    logger.print("Error in subscribe");
+                else
+                    activeSub = TOPIC_DISK_FREE;
+            }
+        }
+        // Stop displaying
+        else if (userChoice.compare("S") == 0 || userChoice.compare("s") == 0) {
+            logger.print("Stop displaying");
+            unsubscribeAll();
+            activeSub = "";
         }
         else
         {
             QString msg = QString("COMMAND NOT VALID: ").append(userChoice);
             logger.print(msg.toStdString());
         }
-    }
-    // Show CPU Temperature
-    else if (userChoice.compare("T") == 0 || userChoice.compare("t") == 0)
-    {
-        if (TOPIC_CPU_TEMP.compare(activeSub) != 0) {
-            unsubscribeAll();
-            logger.print("Start displaying CPU Temperature");
-
-            if (!m_client->subscribe(TOPIC_CPU_TEMP, 0))
-                logger.print("Error in subscribe");
-            else
-                activeSub = TOPIC_CPU_TEMP;
-        }
-    }
-    // Show CPU Usage
-    else if (userChoice.compare("U") == 0 || userChoice.compare("u") == 0)
-    {
-        if (TOPIC_CPU_LOAD.compare(activeSub) != 0) {
-            unsubscribeAll();
-            logger.print("Start displaying CPU Usage");
-
-            if (!m_client->subscribe(TOPIC_CPU_LOAD, 0))
-                logger.print("Error in subscribe");
-            else
-                activeSub = TOPIC_CPU_LOAD;
-        }
-    }
-    // Show free disk space
-    else if (userChoice.compare("F") == 0 || userChoice.compare("f") == 0)
-    {
-        if (TOPIC_CPU_TEMP.compare(activeSub) != 0) {
-            unsubscribeAll();
-            logger.print("Start displaying free disk space");
-
-            if (!m_client->subscribe(TOPIC_DISK_FREE, 0))
-                logger.print("Error in subscribe");
-            else
-                activeSub = TOPIC_DISK_FREE;
-        }
-    }
-    // Stop displaying
-    else if (userChoice.compare("S") == 0 || userChoice.compare("s") == 0) {
-        logger.print("Stop displaying");
-        unsubscribeAll();
-    }
-    else
-    {
-        QString msg = QString("COMMAND NOT VALID: ").append(userChoice);
-        logger.print(msg.toStdString());
     }
 }
 
@@ -147,17 +159,15 @@ void Display::visualize(QString userChoice)
 void Display::onConnect()
 {
     logger.print("Connected.");
-    waitingChoice();
 }
 
 /**
  * @brief Display::onDisconnect
- * Once disconnected from the broker, destroy
+ *
  */
 void Display::onDisconnect()
 {
-    delete m_client;
-    m_client = nullptr;
+    logger.print("Disconnected.");
 }
 
 /**
